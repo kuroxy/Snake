@@ -1,9 +1,11 @@
 #main.py
 import os
+import time
+from kbhit import KBHit
 
-#   ╔═ ══ ╗ 00
-#   ║     ║  0
-#   ╚═ ══ ╝
+#   ╔═══╗ 
+#   ║═══║  
+#   ╚═══╝
 
 # bodypart types
 bodypart = ["║ ", "══", "╔═","╗ ", "╚═", "╝ "]
@@ -28,7 +30,7 @@ class window():
 
     def drawscreen(self):
         #clear terminal then draw screen
-        os.system("cls||clear")
+        os.system("clear")
 
         for i in range(self.winsize[1]):
             print("".join(self.buffer[i]))
@@ -73,25 +75,112 @@ def drawborders(wind):
 def drawpart(wind, pos, type):
     wind.setpixel(pos, bodypart[type])
 
+
 def drawsnake(wind, body):
     calpos = sublist(body[0],body[1])
     if calpos[0]!=0:
         drawpart(wind, body[0], 1)
     elif calpos[1]!=0:
         drawpart(wind, body[0], 0)
+    
+    for i in range(1, len(body[:-1])):
 
-    for pos in range(len(body[1:-1])):
-        low = sublist(body[i-1],body[1])
+        low = sublist(body[i-1],body[i])
         high = sublist(body[i],body[i+1])
 
-        if low[0]==1 and low[1]==0: # right
-            if high[0]
-            drawpart()
+        up = False
+        down = False
+        left = False
+        right = False
+        if low[0]==-1:
+            left=True
+        elif low[0]==1:
+            right=True
+        elif low[1]==-1:
+            up=True
+        elif low[1]==1:
+            down=True
+        
+        if high[0]==1:
+            left=True
+        elif high[0]==-1:
+            right=True
+        elif high[1]==1:
+            up=True
+        elif high[1]==-1:
+            down=True
+
+        if up and left:
+            drawpart(wind,body[i], 5)
+        elif up and right:
+            drawpart(wind,body[i], 4)
+        elif down and left:
+            drawpart(wind,body[i], 3)
+        elif down and right:
+            drawpart(wind,body[i], 2)
+        elif up and down:
+            drawpart(wind,body[i], 0)
+        elif left and right:
+            drawpart(wind,body[i], 1)
+
+    calpos = sublist(body[-2],body[-1])
+    if calpos[0]!=0:
+        drawpart(wind,body[-1], 1)
+    else:
+        drawpart(wind,body[-1], 0)
 
 
-snakebod = [[10,10],[10,11]]
+def movelist(list, head):
+    newlist = [head]
+    
+    for i in list[:-1]:
+        newlist.append(i)
+    return newlist
 
+
+snakebod = [[10,10],[10,11], [10,12],[10,13],[10,14]]
+
+delay = .4
 mainwin = window((25,25))
-drawborders(mainwin)
-drawsnake(mainwin, snakebod)
-mainwin.drawscreen()
+
+
+
+
+
+kb = KBHit()
+
+dir = [0, 0]
+
+dtime = time.time()
+while True:
+    if kb.kbhit():  # keyboard 
+        c = kb.getch()
+        if ord(c) == 27: # ESC
+            break
+        
+        if ord(c) == 119:
+            dir = [0,-1]
+        elif ord(c) == 97:
+            dir = [-1,0]
+        elif ord(c) == 115:
+            dir = [0,1]
+        elif ord(c) == 100:
+            dir = [1,0]
+        print(dir)
+    
+    if time.time()-dtime > delay:
+        dtime = time.time()
+        head = [snakebod[0][0] + dir[0],snakebod[0][1] + dir[1]]
+        snakebod = movelist(snakebod, head)
+    
+        mainwin.clearbuffer("  ")
+        drawborders(mainwin)
+        drawsnake(mainwin, snakebod)
+        mainwin.drawscreen()
+        
+kb.set_normal_term()
+    
+
+
+
+
