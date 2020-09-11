@@ -2,14 +2,15 @@
 import os
 import time
 from kbhit import KBHit
+import random
 
-#   ╔═══╗ 
-#   ║═══║  
+#   ╔═══╗
+#   ║═══║
 #   ╚═══╝
 
 # bodypart types
 bodypart = ["║ ", "══", "╔═","╗ ", "╚═", "╝ "]
-
+#bodypart = ["██", "██", "██","██", "██", "██"]
 def sublist(list1,list2):
     if len(list1) == len(list2):
         newlist = []
@@ -27,10 +28,13 @@ class window():
         self.winsize=tuple(winsize)
         self.buffer = None
         self.clearbuffer("  ")
+        self.clear = "clear"
+        if os.name=="nt":
+            self.clear="cls"
 
     def drawscreen(self):
         #clear terminal then draw screen
-        os.system("clear")
+        os.system(self.clear)
 
         for i in range(self.winsize[1]):
             print("".join(self.buffer[i]))
@@ -82,7 +86,7 @@ def drawsnake(wind, body):
         drawpart(wind, body[0], 1)
     elif calpos[1]!=0:
         drawpart(wind, body[0], 0)
-    
+
     for i in range(1, len(body[:-1])):
 
         low = sublist(body[i-1],body[i])
@@ -100,7 +104,7 @@ def drawsnake(wind, body):
             up=True
         elif low[1]==1:
             down=True
-        
+
         if high[0]==1:
             left=True
         elif high[0]==-1:
@@ -129,19 +133,40 @@ def drawsnake(wind, body):
     else:
         drawpart(wind,body[-1], 0)
 
+def drawapple(wind,applepos):
+    wind.setpixel(applepos, "* ")
 
 def movelist(list, head):
     newlist = [head]
-    
+
     for i in list[:-1]:
         newlist.append(i)
     return newlist
 
+def randompos(wind):
+    x = random.randint(2, wind.winsize[0]-2)
+    y = random.randint(2, wind.winsize[1]-2)
+    return [x, y]
 
-snakebod = [[10,10],[10,11], [10,12],[10,13],[10,14]]
+def calculatedelay(bodylen):
+    de = -0.05 * bodylen**.5 + 0.6
+    return max(de, 0.15)
+    return 0
 
-delay = .4
-mainwin = window((25,25))
+delay = calculatedelay(2)
+mainwin = window((25,25))   # 25,25
+
+applepos = randompos(mainwin)
+snakebod = [randompos(mainwin)]
+snakebod.append(snakebod[0])
+
+
+
+
+mainwin.clearbuffer("  ")
+drawborders(mainwin)
+drawsnake(mainwin, snakebod)
+mainwin.drawscreen()
 
 
 
@@ -153,34 +178,46 @@ dir = [0, 0]
 
 dtime = time.time()
 while True:
-    if kb.kbhit():  # keyboard 
+    fdir = [0, 0]
+    if kb.kbhit():  # keyboard
         c = kb.getch()
         if ord(c) == 27: # ESC
             break
-        
-        if ord(c) == 119:
-            dir = [0,-1]
-        elif ord(c) == 97:
-            dir = [-1,0]
-        elif ord(c) == 115:
-            dir = [0,1]
-        elif ord(c) == 100:
-            dir = [1,0]
-        print(dir)
-    
-    if time.time()-dtime > delay:
+
+        if ord(c) == 119: #W
+            fdir = [0,-1]
+        elif ord(c) == 97: #A
+            fdir = [-1,0]
+        elif ord(c) == 115: #S
+            fdir = [0,1]
+        elif ord(c) == 100: #D
+            fdir = [1,0]
+
+        if fdir != [0, 0]:
+            if [snakebod[0][0] + fdir[0],snakebod[0][1]+ fdir[1]] not in snakebod:
+                dir = list(fdir)
+
+
+
+
+    if time.time()-dtime > delay and dir != [0,0]:
         dtime = time.time()
         head = [snakebod[0][0] + dir[0],snakebod[0][1] + dir[1]]
         snakebod = movelist(snakebod, head)
-    
+
+        if mainwin.buffer[snakebod[0][1]][snakebod[0][0]] == "* ":
+            applepos= randompos(mainwin)
+            snakebod.append(snakebod[-1])
+            delay = calculatedelay(len(snakebod))
+        elif mainwin.buffer[snakebod[0][1]][snakebod[0][0]] != "  ":
+            break
+
         mainwin.clearbuffer("  ")
         drawborders(mainwin)
+        drawapple(mainwin, applepos)
         drawsnake(mainwin, snakebod)
         mainwin.drawscreen()
-        
+
 kb.set_normal_term()
-    
-
-
-
-
+print("You Lost Haha")
+print("Youre score = {0}".format(len(snakebod)))
